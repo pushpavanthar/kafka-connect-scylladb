@@ -111,7 +111,8 @@ public class ScyllaDbSinkTask extends SinkTask {
         final int partition = record.kafkaPartition();
 
         BoundStatement boundStatement = scyllaDbSinkTaskHelper.getBoundStatementForRecord(record);
-        log.trace("put() - Adding Bound Statement {} for {}:{}:{}",
+//        log.debug("boundedStatement - {}", boundStatement.preparedStatement().getQueryString());
+        log.debug("put() - Adding Bound Statement {} for {}:{}:{}",
                 boundStatement.preparedStatement().getQueryString(),
                 record.topic(),
                 record.kafkaPartition(),

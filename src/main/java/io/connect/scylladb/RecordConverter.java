@@ -59,7 +59,7 @@ public abstract class RecordConverter<T> {
 
     protected abstract void setNullField(T result, String name);
 
-    public T convert(SinkRecord record, TopicConfigs topicConfigs, String operationType) {
+    public T convert(SinkRecord record, TopicConfigs topicConfigs, String operationType, List<String> explicitStringColumns) {
         Object recordObject = ScyllaDbConstants.DELETE_OPERATION.equals(operationType) ?
                 record.key() : record.value();
         T result = this.newValue();
@@ -69,7 +69,7 @@ public abstract class RecordConverter<T> {
         if (topicConfigs != null && topicConfigs.isScyllaColumnsMapped()) {
             columnDetailsMap = topicConfigs.getTableColumnMap();
             Preconditions.checkNotNull(record.key(), "key cannot be null.");
-            findRecordTypeAndConvert(result, record.key(), topicConfigs.getTablePartitionKeyMap());
+            findRecordTypeAndConvert(result, record.key(), topicConfigs.getTablePartitionKeyMap(), explicitStringColumns);
             for (Header header : record.headers()) {
                 if (topicConfigs.getTableColumnMap().containsKey(header.key())) {
                     TopicConfigs.KafkaScyllaColumnMapper headerKafkaScyllaColumnMapper = topicConfigs.getTableColumnMap().get(header.key());
@@ -79,12 +79,12 @@ public abstract class RecordConverter<T> {
                 }
             }
         }
-        findRecordTypeAndConvert(result, recordObject, columnDetailsMap);
+        findRecordTypeAndConvert(result, recordObject, columnDetailsMap, explicitStringColumns);
         return result;
     }
 
     void findRecordTypeAndConvert(T result, Object recordObject,
-                                  Map<String, TopicConfigs.KafkaScyllaColumnMapper> columnDetailsMap) {
+                                  Map<String, TopicConfigs.KafkaScyllaColumnMapper> columnDetailsMap, List<String> explicitStringColumns) {
         if (recordObject instanceof Struct) {
             this.convertStruct(result, (Struct)recordObject, columnDetailsMap);
         } else {
@@ -92,11 +92,11 @@ public abstract class RecordConverter<T> {
                 throw new DataException(String.format("Only Schema (%s) or Schema less (%s) are supported. %s is not a supported type.", Struct.class.getName(), Map.class.getName(), recordObject.getClass().getName()));
             }
 
-            this.convertMap(result, (Map)recordObject, columnDetailsMap);
+            this.convertMap(result, (Map)recordObject, columnDetailsMap, explicitStringColumns);
         }
     }
 
-    void convertMap(T result, Map value, Map<String, TopicConfigs.KafkaScyllaColumnMapper> columnDetailsMap) {
+    void convertMap(T result, Map value, Map<String, TopicConfigs.KafkaScyllaColumnMapper> columnDetailsMap, List<String> explicitStringColumns) {
         Iterator valueIterator = value.keySet().iterator();
 
         while(valueIterator.hasNext()) {
@@ -116,6 +116,9 @@ public abstract class RecordConverter<T> {
                 if (null == fieldValue) {
                     log.trace("convertStruct() - Setting '{}' to null.", fieldName);
                     this.setNullField(result, fieldName);
+                } else if(explicitStringColumns.contains(fieldName)) {
+                    log.trace("Fix - convertStruct() - Processing '{}' as string.", fieldName);
+                    this.setStringField(result, fieldName, ScyllaDbConstants.mapper.writeValueAsString(fieldValue));
                 } else if (fieldValue instanceof String) {
                     log.trace("convertStruct() - Processing '{}' as string.", fieldName);
                     this.setStringField(result, fieldName, (String)fieldValue);

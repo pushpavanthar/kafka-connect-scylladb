@@ -26,7 +26,7 @@ public class TopicConfigs {
   private Map<String, KafkaScyllaColumnMapper> tableColumnMap;
   private ConsistencyLevel consistencyLevel = null;
   private String ttlMappedField;
-  private Integer ttl;
+  private int ttl;
   private String timeStampMappedField;
   private Long timeStamp;
   private boolean deletesEnabled;
@@ -155,7 +155,7 @@ public class TopicConfigs {
     if (ttlMappedField != null) {
       Object ttlValue = getValueOfField(record.value(), ttlMappedField);
       if (ttlValue instanceof  Integer) {
-        this.ttl = (Integer) ttlValue;
+        this.ttl = ((Integer) ttlValue).intValue();
       } else {
         throw new DataException(
                 String.format("TTL should be of type Integer. But record provided for %s is of type %s",
@@ -193,7 +193,7 @@ public class TopicConfigs {
     return ttlMappedField;
   }
 
-  public Integer getTtl() {
+  public int getTtl() {
     return ttl;
   }
 

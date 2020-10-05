@@ -65,7 +65,7 @@ public class ScyllaDbSinkTaskHelper {
       if (deletionEnabled) {
         if (this.session.tableExists(tableName)) {
           final RecordToBoundStatementConverter boundStatementConverter = this.session.delete(tableName);
-          final RecordToBoundStatementConverter.State state = boundStatementConverter.convert(record, null, ScyllaDbConstants.DELETE_OPERATION);
+          final RecordToBoundStatementConverter.State state = boundStatementConverter.convert(record, null, ScyllaDbConstants.DELETE_OPERATION, scyllaDbSinkConnectorConfig.explicitStringifiedColumns);
           Preconditions.checkState(
                   state.parameters > 0,
                   "key must contain the columns in the primary key."
@@ -84,7 +84,7 @@ public class ScyllaDbSinkTaskHelper {
     } else {
       this.session.createOrAlterTable(tableName, record, topicConfigs);
       final RecordToBoundStatementConverter boundStatementConverter = this.session.insert(tableName, topicConfigs);
-      final RecordToBoundStatementConverter.State state = boundStatementConverter.convert(record, topicConfigs, ScyllaDbConstants.INSERT_OPERATION);
+      final RecordToBoundStatementConverter.State state = boundStatementConverter.convert(record, topicConfigs, ScyllaDbConstants.INSERT_OPERATION, scyllaDbSinkConnectorConfig.explicitStringifiedColumns);
       boundStatement = state.statement;
     }
 

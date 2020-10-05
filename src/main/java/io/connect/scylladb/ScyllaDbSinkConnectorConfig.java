@@ -1,10 +1,7 @@
 package io.connect.scylladb;
 
 import java.io.File;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -55,11 +52,12 @@ public class ScyllaDbSinkConnectorConfig extends AbstractConfig {
   public final String loadBalancingLocalDc;
   public final long timestampResolutionMs;
   public final Map<String, TopicConfigs> topicWiseConfigs;
-  public final Integer ttl;
+  public final int ttl;
   public final BehaviorOnError behaviourOnError;
   public final List<String> cipherSuites;
   public final File certFilePath;
   public final File privateKeyPath;
+  public final List<String> explicitStringifiedColumns;
 
   private static final Pattern TOPIC_KS_TABLE_SETTING_PATTERN =
           Pattern.compile("topic\\.([a-zA-Z0-9._-]+)\\.([^.]+|\"[\"]+\")\\.([^.]+|\"[\"]+\")\\.(mapping|consistencyLevel|ttlSeconds|deletesEnabled)$");
@@ -144,6 +142,7 @@ public class ScyllaDbSinkConnectorConfig extends AbstractConfig {
     this.loadBalancingLocalDc = getString(LOAD_BALANCING_LOCAL_DC_CONFIG);
     this.timestampResolutionMs = getLong(TIMESTAMP_RESOLUTION_MS_CONF);
     this.behaviourOnError = BehaviorOnError.valueOf(getString(BEHAVIOR_ON_ERROR_CONFIG).toUpperCase());
+    this.explicitStringifiedColumns = getList(EXPLICIT_STRINGIFY_COLUMNS);
 
     Map<String, Map<String, String>> topicWiseConfigsMap = new HashMap<>();
     for (final Map.Entry<String, String> entry : ((Map<String, String>) originals).entrySet()) {
@@ -236,6 +235,9 @@ public class ScyllaDbSinkConnectorConfig extends AbstractConfig {
   private static final String TABLE_CREATE_COMPRESSION_ALGORITHM_DOC = "Compression algorithm to use when the table is created. "
           + "Valid Values are NONE, SNAPPY, LZ4, DEFLATE.";
 
+  public static final String EXPLICIT_STRINGIFY_COLUMNS = "scylladb.explicit.stringify.columns";
+  private static final String EXPLICIT_STRINGIFY_COLUMNS_DOC = "List of columns to be explicitly stored as strings in Scylla DB";
+
   public static final String OFFSET_STORAGE_TABLE_CONF = "scylladb.offset.storage.table";
   private static final String OFFSET_STORAGE_TABLE_DOC = "The table within the Scylladb keyspace "
           + "to store the offsets that have been read from Kafka. This is used to enable exactly once "
@@ -274,7 +276,7 @@ public class ScyllaDbSinkConnectorConfig extends AbstractConfig {
 
   public static final String TTL_CONFIG = "scylladb.ttl";
   /*If TTL value is not specified then skip setting ttl value while making insert query*/
-  public static final String TTL_DEFAULT = null;
+  public static final int TTL_DEFAULT = 0;
   private static final String TTL_DOC = "The retention period for the data in ScyllaDB. "
           + "After this interval elapses, Scylladb will remove these records. "
           + "If this configuration is not provided, the Sink Connector will perform "
@@ -576,6 +578,16 @@ public class ScyllaDbSinkConnectorConfig extends AbstractConfig {
                     ConfigDef.Width.SHORT,
                     "Offset storage table")
             .define(
+                    EXPLICIT_STRINGIFY_COLUMNS,
+                    ConfigDef.Type.LIST,
+                    (Object) Collections.EMPTY_LIST,
+                    ConfigDef.Importance.LOW,
+                    EXPLICIT_STRINGIFY_COLUMNS_DOC,
+                    TABLE_GROUP,
+                    2,
+                    ConfigDef.Width.SHORT,
+                    "Explicit Stringify Column List")
+            .define(
                     EXECUTE_STATEMENT_TIMEOUT_MS_CONF,
                     ConfigDef.Type.LONG,
                     30000,
@@ -588,7 +600,7 @@ public class ScyllaDbSinkConnectorConfig extends AbstractConfig {
                     "Execute statement timeout (in ms)")
             .define(
                     TTL_CONFIG,
-                    ConfigDef.Type.STRING,
+                    ConfigDef.Type.INT,
                     TTL_DEFAULT,
                     ConfigDef.Importance.MEDIUM,
                     TTL_DOC,
