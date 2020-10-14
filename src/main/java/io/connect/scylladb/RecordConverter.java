@@ -117,7 +117,7 @@ public abstract class RecordConverter<T> {
                     log.trace("convertStruct() - Setting '{}' to null.", fieldName);
                     this.setNullField(result, fieldName);
                 } else if(explicitStringColumns.contains(fieldName)) {
-                    log.trace("Fix - convertStruct() - Processing '{}' as string.", fieldName);
+                    log.trace("convertStruct() - Processing '{}' as string.", fieldName);
                     this.setStringField(result, fieldName, ScyllaDbConstants.mapper.writeValueAsString(fieldValue));
                 } else if (fieldValue instanceof String) {
                     log.trace("convertStruct() - Processing '{}' as string.", fieldName);

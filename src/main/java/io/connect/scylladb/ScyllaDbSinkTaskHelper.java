@@ -49,11 +49,14 @@ public class ScyllaDbSinkTaskHelper {
   }
 
   public BoundStatement getBoundStatementForRecord(SinkRecord record) {
-    final String tableName = record.topic();
+    String tableName = record.topic();
     BoundStatement boundStatement = null;
     TopicConfigs topicConfigs = null;
     if (scyllaDbSinkConnectorConfig.topicWiseConfigs.containsKey(tableName)) {
       topicConfigs = scyllaDbSinkConnectorConfig.topicWiseConfigs.get(tableName);
+      if( topicConfigs.getTableMapping() != null) {
+        tableName = topicConfigs.getTableMapping();
+      }
       if (topicConfigs.getMappingStringForTopic() != null && !topicConfigs.isScyllaColumnsMapped()) {
         topicConfigs.setTablePartitionAndColumnValues(record);
       }

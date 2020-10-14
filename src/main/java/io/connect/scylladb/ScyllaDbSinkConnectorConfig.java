@@ -151,6 +151,7 @@ public class ScyllaDbSinkConnectorConfig extends AbstractConfig {
         final String topicName = this.tryMatchTopicName(name2);
         final Map<String, String> topicMap = topicWiseConfigsMap.computeIfAbsent(topicName, t -> new HashMap());
         topicMap.put(name2.split("\\.")[name2.split("\\.").length - 1], entry.getValue());
+        topicMap.computeIfAbsent("table", t -> name2.split("\\.")[name2.split("\\.").length - 2]);
       }
     }
     topicWiseConfigs = new HashMap<>();

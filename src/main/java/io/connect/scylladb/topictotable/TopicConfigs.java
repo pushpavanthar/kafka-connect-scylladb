@@ -31,6 +31,7 @@ public class TopicConfigs {
   private Long timeStamp;
   private boolean deletesEnabled;
   private boolean isScyllaColumnsMapped;
+  private String tableMapping = null;
 
   public TopicConfigs(Map<String, String> configsMapForTheTopic,
                       ScyllaDbSinkConnectorConfig scyllaDbSinkConnectorConfig) {
@@ -41,6 +42,9 @@ public class TopicConfigs {
     this.deletesEnabled = scyllaDbSinkConnectorConfig.deletesEnabled;
     if (configsMapForTheTopic.containsKey("mapping")) {
       this.mappingStringForTopic = configsMapForTheTopic.get("mapping");
+    }
+    if(configsMapForTheTopic.containsKey("table")) {
+      this.tableMapping = configsMapForTheTopic.get("table");
     }
     if (configsMapForTheTopic.containsKey("deletesEnabled")) {
       String deleteEnabledValue = configsMapForTheTopic.get("deletesEnabled");
@@ -195,6 +199,10 @@ public class TopicConfigs {
 
   public int getTtl() {
     return ttl;
+  }
+
+  public String getTableMapping() {
+    return tableMapping;
   }
 
   public Long getTimeStamp() {
